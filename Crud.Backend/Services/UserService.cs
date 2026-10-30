@@ -1,5 +1,6 @@
 using Crud.Backend.Database;
 using Crud.Backend.Models;
+using Crud.Backend.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace Crud.Backend.Services;
@@ -12,14 +13,24 @@ public class UserService(AppDbContext context) : IUserService
         return users;
     }
 
-    public async Task<User?> GetUserById(Guid id)
+    public async Task<User> GetUserById(Guid id)
     {
         var user = await context.Users.FindAsync(id);
+        if (user == null)
+        {
+            throw new NotFoundException("User tidak ditemukan");
+        }
+        
         return user;
     }
 
-    public async Task<User?> CreateUser(User user)
+    public async Task<User> CreateUser(User user)
     {
+        if (!user.ValidateUser())
+        {
+            throw new ArgumentException("Nama user ini tidak valid");
+        }
+
         if (user.Cart == null)
         {
             user.Cart = new Cart();
@@ -31,12 +42,19 @@ public class UserService(AppDbContext context) : IUserService
         return user;
     }
 
-    public async Task<User?> UpdateUser(Guid id, User updateUser)
+    public async Task<User> UpdateUser(Guid id, User updateUser)
     {
+        if (!updateUser.ValidateUser())
+        {
+            throw new ArgumentException("Data pengguna tidak valid");
+        }
+
         var existingUser = await context.Users.FindAsync(id);
 
         if (existingUser == null)
-            return null;
+        {
+            throw new NotFoundException("User tidak ditemukan");
+        }
         
         existingUser.Name = updateUser.Name;
         await context.SaveChangesAsync();
@@ -44,14 +62,15 @@ public class UserService(AppDbContext context) : IUserService
         return existingUser;
     }
 
-    public async Task<bool> DeleteUser(Guid id)
+    public async Task DeleteUser(Guid id)
     {
         var user = await context.Users.FindAsync(id);
         if (user == null)
-            return false;
+        {
+            throw new NotFoundException("User tidak ditemukan");
+        }
 
         context.Users.Remove(user);
         await context.SaveChangesAsync();
-        return true;
     }
 }

@@ -20,6 +20,8 @@ builder.Services.AddSqlite<AppDbContext>(connectionString);
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<ICartItemService, CartItemService>();
 
 var app = builder.Build();
 

@@ -24,10 +24,12 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Crud.Backend v1");
+    });
 }
 
 app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();
-

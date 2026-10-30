@@ -8,12 +8,20 @@ namespace Crud.Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController(AppDbContext context) : BaseApiController
+public class UserController : BaseApiController
 {
+    private readonly AppDbContext _context;
+
+    // ReSharper disable once ConvertToPrimaryConstructor
+    public UserController(AppDbContext context)
+    {
+        _context = context;
+    }
+    
     [HttpGet]
     public IActionResult GetAll()
     {
-        var users = context.Users.ToList();
+        var users = _context.Users.ToList();
 
         return ApiResponse(users, "Berhasil mengambil data user");
     }
@@ -21,7 +29,7 @@ public class UserController(AppDbContext context) : BaseApiController
     [HttpGet("{id:guid}")]
     public IActionResult GetById(Guid id)
     {
-        var user = context.Users.Find(id);
+        var user = _context.Users.Find(id);
 
         if (user == null)
         {
@@ -44,8 +52,8 @@ public class UserController(AppDbContext context) : BaseApiController
         if (!valid)
             return ApiError("Nama user ini tidak valid", StatusCodes.Status400BadRequest);
 
-        context.Users.Add(newUser);
-        context.SaveChanges();
+        _context.Users.Add(newUser);
+        _context.SaveChanges();
 
         return ApiResponse(newUser, "Berhasil membuat pengguna baru");
     }
@@ -53,7 +61,7 @@ public class UserController(AppDbContext context) : BaseApiController
     [HttpPut("{id:guid}")]
     public IActionResult Update([FromBody] PutUserDto dto, Guid id)
     {
-        var existingUser = context.Users.Find(id);
+        var existingUser = _context.Users.Find(id);
 
         if (existingUser == null)
             return ApiError("Pengguna ini tidak ditemukan", StatusCodes.Status404NotFound);
@@ -68,7 +76,7 @@ public class UserController(AppDbContext context) : BaseApiController
             return ApiError("Data pengguna tidak valid", StatusCodes.Status400BadRequest);
 
         existingUser.Name = updatedUser.Name;
-        context.SaveChanges();
+        _context.SaveChanges();
 
         return ApiResponse(updatedUser, "Berhasil memperbarui data pengguna");
     }
@@ -76,13 +84,13 @@ public class UserController(AppDbContext context) : BaseApiController
     [HttpDelete("{id:guid}")]
     public IActionResult Delete(Guid id)
     {
-        var userToDelete = context.Users.Find(id);
+        var userToDelete = _context.Users.Find(id);
 
         if (userToDelete == null)
             return ApiError("Tidak ditemukan user dengan id ini", StatusCodes.Status404NotFound);
 
-        context.Users.Remove(userToDelete);
-        context.SaveChanges();
+        _context.Users.Remove(userToDelete);
+        _context.SaveChanges();
 
         return ApiResponse<object>(null, "Berhasil menghapus pengguna");
     }

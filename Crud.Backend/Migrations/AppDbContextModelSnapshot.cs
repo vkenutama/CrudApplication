@@ -31,7 +31,7 @@ namespace Crud.Backend.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("ShoppingCarts");
+                    b.ToTable("Carts");
                 });
 
             modelBuilder.Entity("Crud.Backend.Models.CartItem", b =>

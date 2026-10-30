@@ -1,10 +1,11 @@
 ﻿using Crud.Backend.Models;
+using Crud.Backend.Services;
 
 namespace Crud.Backend.Database;
 
 public static class DbSeeder
 {
-    public static void Seed(AppDbContext context)
+    public static async Task Seed(AppDbContext context, IUserService userService)
     {
         if (!context.Users.Any())
         {
@@ -26,9 +27,11 @@ public static class DbSeeder
                 }
 
             ];
-            
-            context.Users.AddRange(users);
-            context.SaveChanges();
+
+            foreach (var user in users)
+            {
+                await userService.CreateUser(user);
+            }
         }
 
         if (!context.Products.Any())

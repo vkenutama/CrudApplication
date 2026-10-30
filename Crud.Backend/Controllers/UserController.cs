@@ -1,6 +1,6 @@
-﻿using Crud.Backend.Database;
 using Crud.Backend.Dto;
 using Crud.Backend.Models;
+using Crud.Backend.Services;
 using Crud.Backend.Utils;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,28 +8,19 @@ namespace Crud.Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController : BaseApiController
+public class UserController(IUserService userService) : BaseApiController
 {
-    private readonly AppDbContext _context;
-
-    // ReSharper disable once ConvertToPrimaryConstructor
-    public UserController(AppDbContext context)
-    {
-        _context = context;
-    }
-    
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll()
     {
-        var users = _context.Users.ToList();
-
+        var users = await userService.GetAllUsers();
         return ApiResponse(users, "Berhasil mengambil data user");
     }
 
     [HttpGet("{id:guid}")]
-    public IActionResult GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var user = _context.Users.Find(id);
+        var user = await userService.GetUserById(id);
 
         if (user == null)
         {
@@ -40,7 +31,7 @@ public class UserController : BaseApiController
     }
 
     [HttpPost]
-    public IActionResult Create([FromBody] CreateUserDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
     {
         User newUser = new User
         {
@@ -52,20 +43,13 @@ public class UserController : BaseApiController
         if (!valid)
             return ApiError("Nama user ini tidak valid", StatusCodes.Status400BadRequest);
 
-        _context.Users.Add(newUser);
-        _context.SaveChanges();
-
-        return ApiResponse(newUser, "Berhasil membuat pengguna baru");
+        var createdUser = await userService.CreateUser(newUser);
+        return ApiResponse(createdUser, "Berhasil membuat pengguna baru");
     }
 
     [HttpPut("{id:guid}")]
-    public IActionResult Update([FromBody] PutUserDto dto, Guid id)
+    public async Task<IActionResult> Update([FromBody] PutUserDto dto, Guid id)
     {
-        var existingUser = _context.Users.Find(id);
-
-        if (existingUser == null)
-            return ApiError("Pengguna ini tidak ditemukan", StatusCodes.Status404NotFound);
-
         var updatedUser = new User
         {
             Name = dto.Name,
@@ -74,23 +58,22 @@ public class UserController : BaseApiController
         bool valid = updatedUser.ValidateUser();
         if (!valid)
             return ApiError("Data pengguna tidak valid", StatusCodes.Status400BadRequest);
+        
+        var result = await userService.UpdateUser(id, updatedUser);
 
-        existingUser.Name = updatedUser.Name;
-        _context.SaveChanges();
+        if (result == null)
+            return ApiError("Pengguna ini tidak ditemukan", StatusCodes.Status404NotFound);
 
-        return ApiResponse(updatedUser, "Berhasil memperbarui data pengguna");
+        return ApiResponse(result, "Berhasil memperbarui data pengguna");
     }
 
     [HttpDelete("{id:guid}")]
-    public IActionResult Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var userToDelete = _context.Users.Find(id);
+        var isDeleted = await userService.DeleteUser(id);
 
-        if (userToDelete == null)
+        if (!isDeleted)
             return ApiError("Tidak ditemukan user dengan id ini", StatusCodes.Status404NotFound);
-
-        _context.Users.Remove(userToDelete);
-        _context.SaveChanges();
 
         return ApiResponse<object>(null, "Berhasil menghapus pengguna");
     }
